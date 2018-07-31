@@ -213,6 +213,56 @@ public class PriceMng { // тестирование изменений на ту
 	}
 
 	/**
+	 * Стандарт для подогрева
+	 */
+
+	public Double getStandartByCondition(Calc calc, Storable st, Date genDt, int rqn, Serv serv, boolean isLookUpper) throws EmptyStorable {
+	    Double standart;
+
+        Boolean isTowelHeatExist = parMng.getBool(rqn, st, "Наличие полотенцесушителя", genDt);
+        if (isTowelHeatExist == null && isLookUpper) {
+            // искать на уровне выше, если не найден на текущем
+            isTowelHeatExist = parMng.getBool(rqn, calc.getHouse(), "Наличие полотенцесушителя", genDt);
+        }
+
+        Boolean isHotPipeInsulated = parMng.getBool(rqn, st, "Стояк ГВС изолирован", genDt);
+        if (isHotPipeInsulated == null && isLookUpper) {
+            // искать на уровне выше, если не найден на текущем
+            isHotPipeInsulated = parMng.getBool(rqn, calc.getHouse(), "Стояк ГВС изолирован", genDt);
+        }
+
+        if (isTowelHeatExist == null) {
+            isTowelHeatExist = false;
+        }
+        if (isHotPipeInsulated == null) {
+            isHotPipeInsulated = false;
+        }
+
+        String cdProp = null;
+
+        if (isHotPipeInsulated && isTowelHeatExist) {
+            cdProp = "Норматив с изолир.стояк.без полот.суш.";
+        } else if (!isHotPipeInsulated && isTowelHeatExist) {
+            cdProp = "Норматив с неизолир.стояк.c полот.суш.";
+        } else if (isHotPipeInsulated && !isTowelHeatExist) {
+            cdProp = "Норматив с изолир.стояк.с полот.суш.";
+        } else if (!isHotPipeInsulated && !isTowelHeatExist) {
+            cdProp = "Норматив с неизолир.стояк.без полот.суш.";
+        } else {
+            // если не найдены параметры, то взять простую цену
+            cdProp = "Норматив";
+        }
+
+        standart = kartMng.getServPropByCD(rqn, calc, serv, cdProp, genDt);
+        //log.info("параметр={}, норматив={}", cdProp, standart);
+        if (cdProp != "Норматив" && standart == null) {
+            cdProp = "Норматив";
+            standart = kartMng.getServPropByCD(rqn, calc, serv, cdProp, genDt);
+        }
+        return standart;
+	}
+
+	/**
 	 * Получить расценку по горячей воде, в зависимости от условий
 	 * @param calc - объект, хранящий текущий дом, лиц.счет
 	 * @param genDt - дата формирования

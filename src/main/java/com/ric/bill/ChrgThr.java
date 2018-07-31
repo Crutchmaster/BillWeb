@@ -327,6 +327,8 @@ public class ChrgThr {
 		Integer entry = null;
 		// вариант распределения ОДН
 		Double distODNtp = 0D;
+		// Норма гкал/м3
+		Double gkalSt = 0D;
 
 		// признак жилого помещения
 		Boolean isResid = true;
@@ -588,6 +590,13 @@ public class ChrgThr {
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 				vol = 1 / calc.getReqConfig().getCntCurDays();
 			}
+			if (serv.getCd().equals("Подогрев")) {
+			    gkalSt = priceMng.getStandartByCondition(calc, calc.getHouse(), genDt, rqn, serv, true);
+			    vol *= gkalSt;
+			    stdt.vol = stdt.vol * gkalSt;
+			    stdt.partVol = stdt.partVol * gkalSt;
+			}
+            //log.info("Vol:{}, stdt:{}",vol,stdt.vol);
 
 			//Utl.logger(false, 17, kart.getLsk(), serv.getId()); //###
 
@@ -765,6 +774,10 @@ public class ChrgThr {
 					if (serv.getId()==32) {
 						//log.info("serv.id={}, vol={}, stPrice={}, stdt.vol={}", serv.getId(), vol, stPrice, stdt.vol);
 					}
+					if (serv.getCd().equals("Подогрев")) {
+					    stdt.vol = gkalSt;
+					}
+
 
 					chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(stPrice), null, null,
 									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, tmpSqr, stServ, org, exsMet,
@@ -793,6 +806,9 @@ public class ChrgThr {
 						// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
 						tmpSqr = BigDecimal.valueOf(sqr);
 					}
+					if (serv.getCd().equals("Подогрев")) {
+                        stdt.vol = gkalSt;
+                    }
 
 					if (woKprServ != null) {
 						// если существует услуга "без проживающих"
